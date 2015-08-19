@@ -1,0 +1,305 @@
+<html>
+<head>
+<title>Puzzle Fighter: Java</title>
+</head>
+<body bgcolor=white style=font-family:arial;font-size:12;color:black>
+<p>
+<a name=top>
+<h1>Puzzle Fighter: Java</h1>
+<a href=http://en.wikipedia.org/wiki/Super_Puzzle_Fighter_II_Turbo>Super Puzzle Fighter II Turbo</a> (better known simply as Puzzle Fighter), is a Tetris-esque arcade game from 1996. The gameplay is as follows:<br><br>
+There are two players, each with their own zone (left and right). Pairs of blocks (Gems, in this game), which can be any one of four colors, drop from the top of their zone and fall towards the bottom, and just like in Tetris, the objective is to neatly organize the gems.<br><br>
+In this game however, you organize them by color and try to make as large groups and chains of a given color as possible: every so often, a Crash Gem comes, and when it comes to rest next to any gems of the same color, it starts off a chain reaction that explodes all connected gems of that same color.<br><br>
+The remaining gems drop, and if possible another explosion happens (the cycle repeats). When you explode the gems, a bunch of Counter Gems (the number being relative the number you exploded) falls onto your opponent. These counter gems are not easily destroyed, until 5 turns after they drop, at which point they become normal gems. They do have a color, but can only be blown up if something in their immediate vicinity explodes (regardless of it's color). They can't cause other gems to explode.<br><br>
+Lastly, there are Diamonds, which are similar to crash gems, except they will destroy all gems of the color they land <u>on top of</u>, regardless of position or counter gem-state. Diamonds have no associated color.<br><br>
+When a player breaks blocks to attack the other player, that other player may break blocks before he is attacked. This is called countering, and can reduce the number of dropped blocks or (if the counter is large enough) stop them completely and instead attack back.<br><br>
+A player wins when the other player's next pair of gems is completely blocked from moving.<br>
+<h4>How to Play</h4>
+Player one (on the left) uses QEASD, player two uses the numpad 7, 9, 4, 5, 6. Left and right (A/D, 4/6) move the pair of blocks left and right one column, down (S, 5) makes the blocks drop faster, and  upleft and upright (Q/E, 7/9) rotate the blocks counterclockwise and clockwise, respectively.<br>
+<br>
+The game is currently very playable, though there is one rare problem (along with another minor one) and a few unimplemented features. The rare problem is that on occasion, when block are destroyed the remaining blocks will float in midair. They do, however, fall together at the next opportunity to do so, so it isn't a major gameplay concern. The minor problem is that on the first pair of blocks, the next pair isn't displayed in the preview area. The missing features include using CounterGemSet to actually drop a pattern of counter gems (as opposed to the random system now), no score display, and giving the game a start/end menu (as opposed to throwing the players right into the game).<br><br>
+<b>To begin the game, simply run OverallInterface.</b> If you're playing on a laptop, run it with any parameters (any kind of input is treated as a request for the laptop control scheme, which uses O, [, L, ;, and " instead of the numpad).
+<h3>Classes:</h3>
+<a href=#blinktext>BlinkText</a><br>
+<a href=#block>Block</a><br>
+<a href=#blocklist>BlockList</a><br>
+<a href=#blocknode>BlockNode</a><br>
+<a href=#blockpair>BlockPair</a><br>
+<a href=#board>Board</a><br>
+<a href=#counter>CounterGem</a><br>
+<a href=#counterset>CounterGemSet</a><br>
+<a href=#crash>CrashGem</a><br>
+<a href=#diamond>Diamond</a><br>
+<a href=#gem>Gem</a><br>
+<a href=#overall>OverallInterface</a><br>
+<a href=#rotate>RotatePoints</a><br>
+
+<h1>Classes</h1>
+
+<a name=blinktext><h2>BlinkText</h2>
+BlinkText is a simple class that places blinking warning Images on the screen.
+<h4>Fields</h4>
+<b>private static final int BLINK_DELAY</b>: The time between changing images.<br>
+<b>private String type</b>: The current type of image this is displaying. Images types have two forms to alternate between.<br>
+<b>private Point location</b>: The location of this object on the screen.<br>
+<b>private boolean showing</b>: Whether this BlinkText is being displayed or not.<br>
+<b>private Timer t</b>: The timer that turns this text on and off.<br>
+<b>private HashMap textImageMap</b>: This HashMap stores all the images used by this class with keys corresponding to their type combined with which form they are (1 and 2 for the two alternate states).<br>
+<b>private int which</b>: Which state this BlinkText is currently in.
+<h4>Functions</h4>
+<b>public BlinkText(Point where)</b>: Creates a new BlinkText at location <i>where</i>. The timer is set to go off every BLINK_DELAY milliseconds.<br>
+<b>public void setType(String t)</b>: Sets this BlinkText's type to <i>t</i>.<br>
+<b>public void setLocation(Point where)</b>: Sets this BlinkText's location to <i>where</i>. This will not undraw the previous location, and the change will only be seen upon the next expiration.<br>
+<b>public void show()</b>: Shows this BlinkText. <i>The text is not drawn right away, it will be drawn on the next timer expiration.</i><br>
+<b>public void hide()</b>: Hides this BlinkText. <i>Unlike show(), hide() </i>does<i> hide the text immediately.</i><br>
+<b>public boolean getVisibility()</b>: Returns whether this BlinkText is currently blinking or not.<br>
+<b>public void handleNotification(Notification n, Object o)</b>: Cycles from one form to the next whenever the timer expires.<br>
+<br>
+<a href=#top>Return to top</a><br>
+
+<a name=block><h2>Block</h2>
+This is the abstract superclass that is subclassed by the four different kinds of gems in the game. Almost all of the functions are already defined, since the gems are almost all identical anyway.
+<h4>Fields</h4>
+<b>protected int pixelsX, pixelsY</b>: The location of this Block in pixels from the top left corner of the window. <u>Includes</u> the offset from the top left of the Board containing this block. See note below about these fields.<br>
+<b>protected Board container</b>: The Board that this particular Block is in.<br>
+<b>protected Color blockColor</b>: The Color of this Block (java.awt.Color). Not used for Diamond.<br>
+<b>protected Image blockImage</b>: The Image of this Block.
+<h4>Functions</h4>
+<u>Important note</u>: <i>All</i> functions that involve the pixel location of Blocks (constructors, get functions, move, etc) assume (for input) and return (for output) pixelsX and pixelsY relative to container's offset, though they are stored internally as relative to the window's corner. As a result, the Blocks are drawn (by external functions) relative to the window, but math is performed (by internal functions) relative to the container.<br>
+<b>public Block(int PxX, PxY, Color color, Board board)</b>:  Creates a new Block at pixel location (PxX, PxY). Sets the Color and Board variables as well.<br>
+<b>public Block(int PxX, PxY, Color color)</b>:  Creates a new Block at pixel location (PxX, PxY). Sets the Color variable.<br>
+<b>public int getPixelsX()</b> and <b>public int getPixelsY()</b>: Return the pixelsX and pixelsY fields of this Block, respectively.<br>
+<b>public int getRow()</b> and <b>public int getCol()</b>: Convert and return the pixel location of this Block in row and column location. A block is considered in a certain row or column if it's inside by even one pixel, with the lower and right row/columns taking precedence over their upper and left (respectively) counterparts.<br>
+<b>public Color getColor()</b>: Returns the Color of this Block. It can be one of four: Red, Green, Blue, or Yellow. Diamonds have no associated color and return White.<br>
+<b>public Image getImage()</b>: Returns <i>blockImage</i> for use in drawing this Block.<br>
+<b>public Block copy()</b>: Returns a Block with identical fields as this one.<br>
+<b>abstract Block copy(Board destination)</b>: Returns a Block with identical fields except in Board <i>destination</i> instead of its <i>container</i>.<br>
+<b>abstract Block copyNoBoard()</b>: Returns a copy of this block but with <i>container</i>=null. This is used for copying Blocks off a BlockList, where they have no associated Board.<br>
+<b>public abstract toString()</b>: Used when organizing HashMaps. This forces all Blocks to define this for themselves, which is required for this to function correctly.<br>
+<b>public void move(int newRow, int newCol)</b> and <b>public void movePixels(int newX, int newY)</b>: Moves the Block into the location (newRow, newCol) of its <i>container</i>, or the pixel location (newX, newY), (argument should  <u>include</u> the offset of its <i>container</i>).<br>
+<b>public void shift(int rows, int cols)</b> and <b>public void shiftPixels(int x, int y)</b>: Shifts the Block by <i>rows</i> rows and <i>cols</i> columns, or by <i>x</i> and <i>y</i> pixels.<br>
+<b>public void movePixelsNoBoard(int newX, int newY)</b>: For use with OverallInterface function nextPreviewPair, which draws Blocks with no associated Board.<br>
+<b>public void setColor(Color newColor)</b>: Sets the Color of this Block to newColor.<br>
+<b>public void setBoard(Board b)</b>: Sets this Blocks <i>container</i> to <i>b</i>. For use with copyNoBoard().<br>
+<b>public void destroyNeighborsInternal()</b>: Used once a Diamond or CrashGem begins a chain reaction. Destroys itself and calls this same method on all neighbors of the same color as this.<br>
+<br>
+<a href=#top>Return to top</a>
+
+<a name=blocklist><h2>BlockList</h2>
+BlockList is a doubly linked list that keeps track of the BlockPairs that players recieve. One BlockList is used for two players (Boards), because they are to recieve the same BlockPairs in the same order. It manages its own size: at least one of the players' next in line will be the first element, the previous first elements are removed once they have been asked for by both players. The other player will always be at the same or a farther place, and the list will only be as large as the differece between the two.
+<h4>Fields</h4>
+<b>private Board[] board</b>: A two-element array containing the two players' Boards.<br>
+<b>private int gemCounter</b>: Every 25 BlockPairs must contain a Diamond. This counts that.<br>
+<b>private BlockNode first, last</b>: The first and last elements in the linked list.
+<h4>Functions</h4>
+<b>public BlockList(Board one, Board two)</b>: The only contructor requires two boards. It creates the two beginning elements and notifies the Boards that this is the BlockList they will be using. Also sets each Board's <i>otherBoard</i> variable.<br>
+<b>public int getGemCounter()</b>: Returns gemCounter, used when instantiating BlockPairs.<br>
+<b>public BlockPair getNext(Board requester)</b>: Returns a copy of the next BlockPair in sequence for the calling Board. Calls getFirst() or getLast() to find the correct value according to <i>requester</i>'s <i>listIndex</i> variable.<br>
+<b>public BlockPair peekNext()</b>: Returns a copy of the next BlockPair <i>requester</i> is to recieve without changing anything.<br>
+<b>private BlockPair getFirst(Board requester)</b>: Called by getNext() if the Board has listIndex==0 (see the class explanation as to why). Returns a copy.<br>
+<b>private BlockPair getLast(Board requester)</b>: Called by getNext() if listIndex&gt;0. Returns a copy.<br>
+<b>private BlockPair peekFirst(Board requester)</b> and <b>private BlockPair peekLast(Board requester)</b>: Returns a copy of the appropriate element in <i>requester</i> without changing anything.<br>
+<b>public void addGemCounter()</b>: Increments gemCounter, called each time a new BlockPair is added. Rolls over to 0 after 24.<br>
+<b>private BlockList removeFirst()</b>: Removes and returns the first element in the list. Called by getFirst().<br>
+<b>private void addLast(BlockPair b)</b>: Adds <i>b</i> onto the end of this list.<br>
+<br>
+<a href=#top>Return to top</a><br>
+
+<a name=blocknode><h2>BlockNode</h2>
+BlockNode is simply a node that stores a BlockPair for the doubly-linked list BlockList.
+<h4>Fields</h4>
+<b>private BlockPair value</b>: The BlockPair this BlockNode is holding.<br>
+<b>private BlockNode previous, next</b>: The previous and next BlockNodes to this BlockNode.
+<h4>Functions</h4>
+<b>public BlockNode(BlockPair b)</b>: The constructor requires only a value. <i>previous</i> and <i>next</i> are left at null.<br>
+<b>public BlockNode getNext()</b> and <b>public BlockNode getPrev()</b>: Returns <i>next</i> and <i>previous</i> respectively.<br>
+<b>public BlockPair getValue()</b>: Returns <i>value</i>.<br>
+<b>public void setNext(BlockNode b)</b> and <b>public void setPrev(BlockNode b)</b>: Set <i>next</i> and <i>previous</i> (respectively) to b.<br>
+<b>public void setValue(BlockList b)</b>: Sets <i>value</i> to b.<br>
+<br>
+<a href=#top>Return to top</a><br>
+
+<a name=blockpair><h2>BlockPair</h2>
+A BlockPair stores two Blocks, and a Board that contains them. It handles the actions associated strictly with pairs of blocks, like rotating.
+<h4>Fields</h4>
+<b>public static final int CRASH_CHANCE, px, bs</b>: The chance that a newly created Block for this BlockPair will be an Ellipse (crash gem), Board.PIXELS_DOWN, and Board.BLOCK_SIZE, respectively. (The last two for ease-of-use only).<br>
+<b>public static final Color[] allColors</b>: The four colors that a new Block can be.<br>
+<b>private Block pivot, other</b>: The two Blocks in this BlockPair. The only difference is that when asked to rotate, <i>other</i> rotates around <i>pivot</i>.<br>
+<b>private Board container</b>: The Board that contains this BlockPair.
+<h4>Functions</h4>
+<b>public BlockPair(BlockList list)</b>: Creates a new BlockPair with two random Blocks.<br>
+<b>public BlockPair(Block p, Block o, Board b)</b> Creates a new BlockPair with pivot <i>p</i>, other <i>o</i>, and container <i>b</i>. For use with copy().<br>
+<b>public BlockPair copy(Board dest)</b>: Returns a BlockPair with identical fields except container as <i>dest</i>. <u>Note</u>: This calls copy() of the two Blocks it contains. There no shared objects between the returned object and the calling object (unless container is the same as <i>dest</i>).<br>
+<b>public BlockPair copyNoBoard()</b>: Behaves similarly to the Block function of the same name. Also copies <i>pivot</i> and <i>other</i> so no objects are shared.<br>
+<b>public void setBoard(Board board)</b>: Sets container to <i>board</i>.<br>
+<b>public Block getPivot()</b> and <b>public Block getOther()</b>: Returns the <i>pivot</i> and <i>other</i> of this BlockPair, respectively.<br>
+<b>public void shift(int dir)</b>: Shifts the pair left (<i>dir</i>&lt;0) or right (<i>dir</i>&gt;0) <i>dir</i> columns.<br>
+<b>public void rotate(boolean ccw)</b>: Rotates the pair around the pivot counter clockwise if <i>ccw</i> is true, otherwise clockwise. Calls the shiftPixels() function of both <i>pivot</i> and <i>other</i>.<br>
+<br>
+<a href=#top>Return to top</a><br>
+
+<a name=board><h2>Board</h2>
+A Board essentially represents the player. It stores all the Blocks in the players zone and has functions that control major game effects (such as destroying blocks).<br>
+<br>
+<i>Implements NotificationListener and KeyListener.</i>
+<h4>Fields</h4>
+<b>public static final int BLOCK_VALUE, PIXELS_DOWN, BLOCK_SIZE, NUM_ROWS, NUM_COLS</b>: The point value of one Block, the number of pixels down a Block moves each timestep, the full size of a Block, and the rows/columns of a Board, respectively.<br>
+<b>public static final double BLOCK_DROP_NUM, BLOCK_COUNTER_NUM, DEFAULT_FACTOR, NUMRECT_FACTOR, DIAMOND_FACTOR</b>: For balancing purposes. The first two dictate the values of attacking versus defending blocks, the last three modify the values of certain blocks.<br>
+<b>public static OverallInterface OI</b>: The overallInterface for this game. This makes accessing it from any place very easy.<br>
+<b>private Block[][] board</b>: The 2D array that represents each space in the player's zone.<br>
+<b>private int score, listIndex</b>: The players score and the index of this player in the board's BlockList, respectively.<br>
+<b>private double numBlocks</b>: The number of Counter Gems to be dropped on this Board at the next opportunity. Some blocks or some situations have different values than others, hence the double value.<br>
+<b>private Point offset</b>: The offset, in pixels, of the Board's top left corner from the window's top left corner.<br>
+<b>private BlockList list</b>: The BlockList associated with this Board.<br>
+<b>private NotificationFilterSupport filter</b>: To change the filtering of Timer events to increase/decrease frequency of movement.<br>
+<b>private BlockPair currentPair</b>: The current BlockPair the player is playing with.<br>
+<b>private Board otherBoard</b>: The other player's Board.<br>
+<b>private Diamond curDiamond</b>: If a Diamond is on the Board, it must be destroyed first. This variable is used to speed up the process.<br>
+<b>pirvate CounterGem counter</b> (<i>not yet implemented</i>): When Blocks drop on the opponent, they drop in a pattern, stored here.<br>
+<b>private int[] legalKeys</b>: The values of the keys that this Board listens to.<br>
+<b>private boolean waiting, beganDrop</b>: Whether the player's input will be listened to (false if it will), and whether any Counter Gems have been dropped on this player since the last BlockPair was put down, respecitvely. (beganDrop is used to enforce the order of events after a player drops the BlockPair).<br>
+<b>private BlinkText text</b>: The BlinkText associated with this Board.
+<h4>Functions</h4>
+<b>public Board(Point cornerOffset, int[] keys)</b>: Constructs this board with offset <i>cornerOffset</i> and boards as a NUM_ROWS x NUM_COLS array. Also sets legalKeys to <i>keys</i>.<br>
+<i>The following two functions are grouped with the constructor because they are similar in function but cannot be incorporated into it; they require other objects (which require Boards).</i><br>
+<b>public void setList(BlockList b)</b>: Sets <i>list</i> to <i>b</i>.<br>
+<b>public void setOtherBoard(Board b)</b>: Sets <i>otherBoard</i> to <i>b</i>.<br>
+<b>public void setFilter(NotificationFilterSupport f)</b>: Sets <i>filter</i> to <i>f</i>.<br>
+<b>public void setBlinkText(BlinkText b)</b>: Sets <i>text</i> to <i>b</i>.<br>
+<b>public void setCounter(CounterGem c)</b>: Separated from the constructor for easier implementation of counter gems. Setting this currently has no effect.<br>
+<b>public static Point pixelsToPoint(int x, int y, Point off)</b>: Returns a row/column location of the pixel location (x, y), taking into account offset <i>off</i>. This is static because some objects that use this method have no container.<br>
+<b>public static int pixelsToCoord(int px, int offset)</b>: Works similarly to pixelsToPoint(), but works on only one coordinate and not a Point.<br>
+<b>public static int[] randSeq(int length)</b>: Returns an int array of size <i>length</i> containing all integers 0&lt;=x&lt;<i>length</i> in random order, each appearing exactly once.<br>
+<b>public static Block[] toArray(ArrayList<Block> blocks)</b>: Same functionality as ArrayList.toArray(), except that that function was causing problems (why is still unknown), so we rewrote it.<br>
+<b>public void handleNotification(Notification n, Object o)</b>: Called when the Board is notified by a Timer that it needs to execute a timestep. Calls the correct gameplay functions (such as moveDown() or destroyBlocks()) depending on the situation at hand. Also calls toggleFilter() to change the speed at which these events happen (which is dependent on what this function does). Also checks and declares winner/loser.<br>
+<b>public void keyPressed(KeyEvent e)</b>: Calls keyTyped(e).<br>
+<b>public void keyTyped(KeyEvent e)</b>: Handles player input by checking validity of input and calling the correct gameplay functions.<br>
+<b>public void keyReleased(KeyEvent e)</b>: When a player holds their down key, the "fast" filter is turned on. When it is released, it is reverted back to "normal."<br>
+<b>public BlockPair getCurrentPair()</b>: Returns this Board's <i>currentPair</i>.<br>
+<b>public int getWidth()</b> and <b>public int getHeight()</b>: Returns this Board's width or height in pixels.<br>
+<b>public double getNumBlocks()</b>: Returns this Board's <i>numBlocks</i>, for use by other Boards.<br>
+<b>public NotificationFilterSupport getFilter()</b>: Returns the NotificationFilterSupport used by this Board.<br>
+<b>public Block getLocation(int row, int col)</b> and <b>public Block getLocation(Point p)</b>: Returns the Block at the given row/column location, or null. <i>p</i> is assumed to be a row/column location.<br>
+<b>public boolean spaceEmpty(int row, int col)</b> and <b>public boolean spaceEmpty(Point P)</b>: Returns true if the row/column location is empty, false if it's occupied or out of bounds. Point <i>p</i> is treated as a row/column location.<br>
+<b>public Point getOffset()</b>: Returns this Board's offset.<br>
+<b>public int getIndex()</b>: Returns this Board's listIndex. For internal use only.<br>
+<b>public void stop()</b>: Tells this Board to stop accepting input (sets <i>waiting</i> to true).<br>
+<b>private boolean topRowClear()</b>: Returns whether the entire top row of this Board is entirely clear (checks whether the spaces are occupied or lower spaces overlap the top spaces).<br>
+<b>private ArrayList&lt;Block&gt; getNeighborsInternal(int row, int col)</b>: Returns the <u>occupied</u> spaces at each cardinal direction to the given row/column.<br>
+<b>public Block[] getNeighbors(int row, int col)</b>: Returns getNeighborsInternal() as a Block array.<br>
+<b>public Block[] getNeighborsSameColor(int row, int col)</b>: Returns the neighbors that share a color with the Block at the given location. Throws NullPointerException if that space is empty.<br>
+<b>public Block[] getLegalDestroyTargets(int row, int col)</b>: Returns the neighbors that share a color with the block at the given location OR are CounterGems. Throws NullPointerException if the location is empty. For use in the Block function destroyNeighborsInternal().<br>
+<b>public Block[] removeNumberRects(Block[] blocks)</b>: Remove all Blocks of type CounterGem from <i>blocks</i> and returns it. For use in the legality check of Ellipses starting a chain reaction.<br>
+<b>public void addIndex(int toAdd)</b>: Adds <i>toAdd</i> to this Board's <i>listIndex</i>. Internal use only.<br>
+<b>public void addNumBlocks(int toAdd)</b>: Adds <i>toAdd</i> to this Board's <i>numBlocks</i>.<br>
+<b>public void setLocation(int row, int col, Block b)</b> and <b>public void setLocation(Point p, Block b)</b>: Sets this Boards row/column location to <i>b</i>. <i>p</i> is assumed to be in row/column form.<br>
+<b>private void addNextPair()</b>: Adds the next BlockPair in sequence to this Board from <i>list</i>.<br>
+<b>private void decrementAll()</b>: Calls decrement() of every CounterGem in this Board, then redraws them.<br>
+<b>public void toggleFilter(String prefix)</b>: Turns off the previous filter types and then turns on the type <i>prefix</i>.<br>
+<b>public BlinkText getBlinkText()</b>: Returns this Board's <i>text</i>, for use by other Boards.<br>
+<b>private boolean moveDownPair()</b>: Moves down the currentPair of this Board according the same rules as moveDown().<br>
+<b>private boolean moveDown()</b>: Moves all freefloating blocks in this Board down PIXELS_DOWN pixels. Returns true if there are still blocks floating (they have to be fully in place for it to be false).<br>
+<b>private void removeBlock(Block b)</b>: Removes <i>b</i> from this Board's 2D array, then redraws it's now empty location.<br>
+<b>public void destroyBlock(Block b)</b> and <b>public void destroyBlock(Block b, int points)</b>: Calls removeBlock() with <i>b</i>, then adds BLOCK_VALUE or <i>points</i> to the Board's score. Adds to <i>otherBoard</i>'s <i>numBlocks</i>.<br>
+<b>private boolean destroyBlocks()</b>: Runs through the 2D array and initiates any <u>legal</u> chain reactions started by either Ellipses or Diamonds. Moves all Blocks down and then calls itself until there are no more possible destructions. Returns true if any Blocks were destroyed. Uses <i>oi</i> to redraw.<br>
+<b>private boolean dropBlocks()</b>: Drops Counter Gems on this Board. Returns true if there are more to be dropped OR any were dropped.<br>
+<br>
+<a href=#top>Return to top</a><br>
+
+<a name=counter><h2>CounterGem</h2>
+This is a subclass of Gem. After a certain amount of turns, they turn into regular Gems.
+<h4>Fields</h4>
+<b>public static final int DEFAULT_VALUE</b>: The default value of a new CounterGem.<br>
+<b>private int value</b>: The number of turns until this becomes a Gem.
+<h4>Functions</h4>
+<i>These are only the functions that differ from the standard Block functions or are new.</i><br><br>
+<b>public CounterGem(int row, int col, int startValue, Color color, Board board)</b>: Functions the same as the superclass constructor, but also initializes the value field to <i>startValue</i>.<br>
+<b>public int getValue()</b>: Returns this CounterGem's <i>value</i>.<br>
+<b>public void decrement()</b>: Decrements the value of this NumberRectangle, then replaces it with a Rectangle if value==0.<br>
+<b>public void destroyNeighborsInternal()</b>: This block will blow up if something next to it does (regardless of color), but will not pass on the chain. The function destroys only itself.<br>
+<br>
+<a href=#top>Return to top</a><br>
+
+<a name=counterset><h2>CounterGemSet</h2>
+This represents the Counter Gem pattern of each player. It is not yet implemented in the Board class.
+<h4>Fields</h4>
+<b>private CounterGemSet[][] counter</b>: The 2D, 4 x 6 array of the counter gems represented by this object.
+<h4>Functions</h4>
+<b>public CounterGemSet(CounterGem[][] blocks)</b>: Sets <i>counter</i> to <i>blocks</i>. Throws ArrayIndexOutOfBoundsException if it is not given a 4 x 6 array.<br>
+<b>public CounterGemSet(String[] colors)</b>: Converts the String array into a legal 2D array of CounterGems for <i>counter</i>. Legal strings are "red", "green", "blue", and "yellow." Any other Strings will cause this to put a random color. Throws ArrayIndexOutOfBoundsException if <i>colors</i> is not exactly 24 elements.<br>
+<b>public static Color parseColor(String color)</b>: Returns a Color according to a String as described above.<br>
+<br>
+<a href=#top>Return to top</a><br>
+
+<a name=crash><h2>CrashGem</h2>
+<h4>Fields</h4>
+<i>No new or different fields.</i>
+<h4>Functions</h4>
+<i>These are only the functions that differ from the standard Block functions or are new.</i><br><br>
+<b>public boolean destroyNeighbors()</b>: The function that initiates the chain reaction, similar to the Diamond function of the same name. Called by the Board method destroyBlocks().<br>
+<br>
+<a href=#top>Return to top</a><br>
+
+<a name=diamond><h2>Diamond</h2>
+<h4>Fields</h4>
+<i>No new or different fields.</i>
+<h4>Functions</h4>
+<i>These are only the functions that differ from the standard Block functions or are new.</i><br><br>
+<b>public Diamond(int PxX, int PxY, Board board)</b>: Functions the same as the regular Block constructor, except it does not require a Color. Calls super() with Color.white.<br>
+<b>public void setColor(Color newColor)</b>: Never use this on a Diamond.<br>
+<b>public boolean destroyNeighbors()</b>: The function that initiates the chain reaction, similar to the CrashGem function of the same name. Called by the Board method destroyBlocks().<br>
+<b>public void destroyNeighborsInternal()</b>: Does nothing. These will always blow up, and since they always initiate the reaction they need not worry about continuing a chain started by another block, which is the purpose of this function.<br>
+<b>private void reconstruct(int xOffset, int yOffset)</b>: Diamonds are more complex to redraw than their counterparts. This function is called by the move/shift methods.<br>
+<br>
+<a href=#top>Return to top</a><br>
+
+<a name=gem><h2>Gem</h2>
+<h4>Fields</h4>
+<i>No new or different fields.</i>
+<h4>Functions</h4>
+<i>No new or different functions.</i><br>
+<br>
+<a href=#top>Return to top</a><br>
+
+<a name=overall><h2>OverallInterface</h2>
+This class controls all the window interfacing and redrawing of the game. This is what people see.<br>
+<br>
+<i>OverallInterface extends JFrame and implements WindowListener.</i>
+<h4>Fields</h4>
+<b>public static final Dimension MIN_SIZE, MAX_SIZE</b>: The minimum and maximum sizes of the window, for scaling purposes (not yet implemented).<br>
+<b>private static final int BLOCK_SIZE, SPEED_NORMAL, SPEED_FAST, SPEED_FASTEST</b>: Board.BLOCK_SIZE (repeated here for ease of use), and the three different timesteps corresponding to different speeds.<br>
+<b>private static final int[] CONTROLS_ONE_DEFAULT, CONTROLS_TWO_DEFAULT, CONTROLS_TWO_LAPTOP</b>: The sets of buttons that are legal input for each player. The laptop version of player two exists because the default scheme uses the numpad, which laptops don't have.<br>
+<b>private Board board1, board2</b>: The two players' Boards.<br>
+<b>private BlockList blist</b>: The BlockList to be used in this game.<br>
+<b>public HashMap imageMap</b>: The map that stores <u>all</u> possible Blocks' images. Public so that Blocks can access it more easily.<br>
+<b>public Timer t</b>: The Timer that causes each Board to execute a timestep at varying speeds. It is public for ease-of-use for the Boards.
+<h4>Functions</h4>
+<b>public OverallInterface()</b>: Calls the constructor below with <i>laptopGame</i> as false.<br>
+<b>public OverallInterface(boolean laptopGame)</b>: Sets up the Boards, window properties. Creates a BlockList and registers the Boards with it. Registers self with WindowListener. If <i>laptopGame</i> is true, player two uses <i>CONTROLS_TWO_LAPTOP</i> instead.<br>
+<b>private void beginTimer()</b>: Sets up the Timer for this OverallInterface with three speeds ("normal" for normal falling speed, "fast" for players holding down, "fastest" for blocks dropping of their own accord). Registers the Boards with the Timer and sets their filters to the default "normal." Starts the timer.<br>
+<b>private void setupImageMap()</b>: Sets up <i>imageMap</i> with all the possible Block images.<br>
+<b>public void windowOpened(WindowEvent e), windowActivated(WindowEvent e), windowDeactivated(WindowEvent e), windowIconified(WindowEvent e), windowDeiconified(WindowEvent e), windowClosing(WindowEvent e)</b> and <b>windowClosed(WindowEvent e)</b>: The various functions for stopping and starting the timer and repainting the frame according to what's happening to the window.<br>
+<b>public Board getBoard(int which)</b>: Returns <i>board1</i> if <i>which</i> is 0, otherwise <i>board2</i>.<br>
+<b>public void paint(Graphics g)</b>: The overridden method of JFrame that actually paints the window. Calls drawBlock().<br>
+<b>public void writeString(String text, Point location)</b>: Calls the other writeString() with color=Color.white.<br>
+<b>public void writeString(String text, Point location, Color color)</b>: Writes <i>text</i> on the window at <i>location</i>. Used when the game ends.<br>
+<b>public void eraseBlock(Block b, Point offset)</b>: Erases <i>b</i>.<br>
+<b>public void drawBlock(Block block, Point offset)</b>: Calls drawBlockInternal() with this Block. If the Block is higher than the top viewable area, it erases the offending part.<br>
+<b>private void drawBlockInternal(Block b, Point offset)</b>: Calls drawImage() with this Block. Used directly by nextPreviewPair as it does not require a Board.<br>
+<b>public void nextPreviewPair(Board board, double boardNumber)</b>: Uses peekNext() of this game's BlockList to draw the next BlockPair <i>board</i> is to recieve. <i>boardNumber</i> is an offset to show that BlockPair in the correct location.<br>
+<b>public static void main(String[] args)</b>: Run this class to begin the game.<br>
+<br>
+<a href=#top>Return to top</a><br>
+
+<a name=rotate><h2>RotatePoints</h2>
+An instance of this class is used by the BlockPair function rotate(). It is integrated into the BlockPair class file.
+<h4>Fields</h4>
+<b>private Point[] points</b>: The four points that are in each compass direction around the location given in the constructor.
+<h4>Functions</h4>
+<b>public static Point differenceBetween(Point first, Point second)</b>: Returns a new Point whose coordinates are the differences of the coordinates of the arguements. Used by the rotate() function in BlockPair.<br>
+<b>public Point nextCW(Point p)</b>: Returns the next point in the clockwise direction from <i>p</i>, or null if <i>p</i> is not part of the four points.<br>
+<b>public Point nextCCW(Point p)</b>: Same functionality as nextCW(), except counter clockwise.<br>
+<br>
+<a href=#top>Return to top</a><br>
+</p>
+</body>
+</html>
